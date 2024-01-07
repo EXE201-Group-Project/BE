@@ -68,7 +68,7 @@ namespace Base.API.Controllers
             return BadRequest(new ServiceResponseVM
             {
                 IsSuccess = false,
-                Message = "Invalid input4",
+                Message = "Invalid input2",
             });
         }
 
