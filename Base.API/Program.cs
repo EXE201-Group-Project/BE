@@ -223,7 +223,7 @@ builder.Services.AddStackExchangeRedisCache(option =>
 {
     option.Configuration = Configuration["Redis:RedisURL"];
 });
-
+//Test
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
