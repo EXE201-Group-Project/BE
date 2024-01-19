@@ -15,5 +15,7 @@ public class Trip : AuditableEntity
 
     public int Status { get; set; }
 
+    public bool Deleted { get; set; } = false;
+
     public IEnumerable<Location> Locations { get; set; } = new List<Location>();
 }

@@ -18,7 +18,7 @@ public class Package : AuditableEntity
     [Column(TypeName = "money")]
     public Decimal Price { get; set; } = 0;
 
-    public bool IsDeleted { get; set; } = false;
+    public bool Deleted { get; set; } = false;
     public bool IsValid { get; set; } = true;
 
     public IEnumerable<Bill> Bills { get; set; } = new List<Bill>();
