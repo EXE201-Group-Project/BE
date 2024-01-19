@@ -39,7 +39,7 @@ public class UserService : IUserService
             return new ServiceResponseVM<User>
             {
                 IsSuccess = false,
-                Message = "Username is already taken"
+                Title = "Username is already taken"
             };
         }
 
@@ -51,7 +51,7 @@ public class UserService : IUserService
                 return new ServiceResponseVM<User>
                 {
                     IsSuccess = false,
-                    Message = "Email is already taken",
+                    Title = "Email is already taken",
                 };
             }
         }
@@ -64,7 +64,7 @@ public class UserService : IUserService
                 return new ServiceResponseVM<User>
                 {
                     IsSuccess = false,
-                    Message = "Phone is already taken"
+                    Title = "Phone is already taken"
                 };
             }
         }
@@ -95,7 +95,7 @@ public class UserService : IUserService
                     return new ServiceResponseVM<User>
                     {
                         IsSuccess = false,
-                        Message = "Failed to register",
+                        Title = "Failed to register",
                         Errors = new List<string>() { $"Role with id:{id} not found" }
                     };
                 }
@@ -142,7 +142,7 @@ public class UserService : IUserService
                 return new ServiceResponseVM<User>
                 {
                     IsSuccess = false,
-                    Message = "Failed to register",
+                    Title = "Failed to register",
                     Errors = identityResult.Errors.Select(e => e.Description)
                 };
             }
@@ -150,9 +150,9 @@ public class UserService : IUserService
             {
                 return new ServiceResponseVM<User>
                 {
-                    Entity = newUser,
+                    Result = newUser,
                     IsSuccess = true,
-                    Message = "Register successfully"
+                    Title = "Register successfully"
                 };
             }
         }
@@ -161,7 +161,7 @@ public class UserService : IUserService
             return new ServiceResponseVM<User>
             {
                 IsSuccess = false,
-                Message = "Failed to register",
+                Title = "Failed to register",
                 Errors = new List<string>() { ex.Message }
             };
         }
@@ -170,7 +170,7 @@ public class UserService : IUserService
             return new ServiceResponseVM<User>
             {
                 IsSuccess = false,
-                Message = "Failed to register",
+                Title = "Failed to register",
                 Errors = new string[1] { "The operation has been cancelled" }
             };
         }
@@ -195,7 +195,7 @@ public class UserService : IUserService
         {
             return new LoginUserManagement
             {
-                Message = "Invalid username or password",
+                Title = "Invalid username or password",
                 IsSuccess = false
             };
         }
@@ -204,7 +204,7 @@ public class UserService : IUserService
         {
             return new LoginUserManagement
             {
-                Message = "Invalid username or password",
+                Title = "Invalid username or password",
                 IsSuccess = false
             };
         }
@@ -213,7 +213,7 @@ public class UserService : IUserService
         {
             return new LoginUserManagement
             {
-                Message = "Account is blocked",
+                Title = "Account is blocked",
                 IsSuccess = false
             };
         }
@@ -223,7 +223,7 @@ public class UserService : IUserService
             existedUser.Roles = roles;
             return new LoginUserManagement
             {
-                Message = "Login Successfully",
+                Title = "Login Successfully",
                 IsSuccess = true,
                 LoginUser = existedUser,
                 RoleNames = roles.Select(r => r.Name)

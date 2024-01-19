@@ -30,7 +30,7 @@ public class User : IdentityUser<Guid>
 
 public class LoginUserManagement
 {
-    public string? Message { get; set; }
+    public string? Title { get; set; }
     public bool IsSuccess { get; set; }
     public IEnumerable<string>? Errors { get; set; }
     public User? LoginUser { get; set; }

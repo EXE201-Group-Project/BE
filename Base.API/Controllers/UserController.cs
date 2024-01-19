@@ -2,6 +2,7 @@
 using Base.Service.IService;
 using Base.Service.ViewModel.RequestVM;
 using Base.Service.ViewModel.ResponseVM;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,8 +33,8 @@ namespace Base.API.Controllers
                 {
                     return CreatedAtAction(nameof(GetUserById), new
                     {
-                        id = result.Entity!.Id
-                    }, _mapper.Map<UserInformationResponseVM>(result.Entity));
+                        id = result.Result!.Id
+                    }, _mapper.Map<UserInformationResponseVM>(result.Result));
                 }
                 return BadRequest(_mapper.Map<ServiceResponseVM>(result));
             }
@@ -42,7 +43,7 @@ namespace Base.API.Controllers
                 return BadRequest(new ServiceResponseVM
                 {
                     IsSuccess = false,
-                    Message = "Invalid input"
+                    Title = "Invalid input"
                 });
             }
         }
@@ -60,14 +61,17 @@ namespace Base.API.Controllers
                 {
                     return NotFound("Not Found");
                 }
-                return Ok(_mapper.Map<UserInformationResponseVM>(userResult));
+                return Ok(new ServiceResponseVM<UserInformationResponseVM>
+                {
+                    Result = _mapper.Map<UserInformationResponseVM>(userResult)
+                });
             }
             else
             {
                 return BadRequest(new ServiceResponseVM
                 {
                     IsSuccess = false,
-                    Message = "Invalid input"
+                    Title = "Invalid input"
                 });
             }
         }

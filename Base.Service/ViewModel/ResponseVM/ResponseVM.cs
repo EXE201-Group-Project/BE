@@ -10,24 +10,24 @@ namespace Base.Service.ViewModel.ResponseVM;
 public class ServiceResponseVM<T> where T : class
 {
     public bool IsSuccess { get; set; }
-    public string? Message { get; set; }
+    public string? Title { get; set; }
     public IEnumerable<string>? Errors { get; set; }
     //public bool? IsRestored { get; set; } = false;
 
-    public T? Entity { get; set; }
+    public T? Result { get; set; }
 }
 
 public class ServiceResponseVM
 {
     public bool IsSuccess { get; set; }
-    public string? Message { get; set; }
+    public string? Title { get; set; }
     public IEnumerable<string>? Errors { get; set; }
 }
 
 public class AuthenticateResponseVM
 {
     public string? Token { get; set; }
-    public UserInformationResponseVM? UserInformation { get; set; }
+    public UserInformationResponseVM? Result { get; set; }
 }
 public class UserInformationResponseVM : Auditable
 {

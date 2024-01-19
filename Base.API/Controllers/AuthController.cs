@@ -43,7 +43,7 @@ namespace Base.API.Controllers
                         return Ok(new AuthenticateResponseVM
                         {
                             Token = tokenString,
-                            UserInformation = _mapper.Map<UserInformationResponseVM>(result.LoginUser!)
+                            Result = _mapper.Map<UserInformationResponseVM>(result.LoginUser!)
                         });
                     }
                     else
@@ -51,7 +51,7 @@ namespace Base.API.Controllers
                         return StatusCode(500, new ServiceResponseVM
                         {
                             IsSuccess = false,
-                            Message = "Login failed",
+                            Title = "Login failed",
                             Errors = new List<string>() { "Can not create token" }
                         });
                     }
@@ -61,14 +61,14 @@ namespace Base.API.Controllers
                     return Unauthorized(new ServiceResponseVM
                     {
                         IsSuccess = false,
-                        Message = result.Message
+                        Title = result.Title
                     });
                 }
             }
             return BadRequest(new ServiceResponseVM
             {
                 IsSuccess = false,
-                Message = "Invalid input2",
+                Title = "Invalid input hehe",
             });
         }
 

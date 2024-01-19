@@ -24,6 +24,7 @@ using Base.API.Common;
 using CloudinaryDotNet;
 using HttpMethod = System.Net.Http.HttpMethod;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -106,6 +107,32 @@ builder.Services.AddControllers(options =>
     // Add Global Exception Filter here
     //options.Filters.Add<HttpResponseExceptionFilter>();
 })
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = actionContext =>
+        {
+            var errorStrings = new List<string>();
+            var modelState = actionContext.ModelState;
+
+            // values is IEnumerable of ModelStateEntry, we need to take error messages from each ModleStateEntry
+            // error messages of each ModelStateEntry is stored in Errors property, which will return Collection of ModelError
+            var values = modelState.Values;
+
+            foreach (var modelStateEntry in values)
+            {
+                foreach (var modelError in modelStateEntry.Errors)
+                {
+                    errorStrings.Add(modelError.ErrorMessage);
+                }
+            }
+            return new BadRequestObjectResult(new
+            {
+                Status = 400,
+                Title = "One or more validation errors occurred",
+                Errors = errorStrings
+            });
+        };
+    })
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.PropertyNamingPolicy = null;
