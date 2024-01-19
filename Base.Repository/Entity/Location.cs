@@ -14,6 +14,7 @@ public class Location : AuditableEntity
     public int Id { get; set; }
     public string? Address { get; set; }
     public int Order { get; set; }
+    public bool Deleted { get; set; } = false;
 
     public Trip? Trip { get; set; }
     public int TripId { get; set; }

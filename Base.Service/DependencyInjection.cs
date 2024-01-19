@@ -1,5 +1,7 @@
 ﻿using Base.Service.IService;
 using Base.Service.Service;
+using Base.Service.Validation;
+using FTask.Service.Validation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -16,9 +18,12 @@ public static class DependencyInjection
     {
         #region Services
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IRoleService, RoleService>();
         #endregion
 
         #region Validation
+        services.AddSingleton<ICheckQuantityTaken, CheckQuantityTaken>();
+        services.AddSingleton<IValidateGet, ValidateGet>();
         #endregion
 
         return services;

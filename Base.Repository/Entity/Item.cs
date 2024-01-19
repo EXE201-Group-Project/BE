@@ -15,6 +15,7 @@ public class Item : AuditableEntity
     public string Name { get; set; } = "Undefined";
     public int Quantity { get; set; }
     public string? Description { get; set; }
+    public bool Deleted { get; set; } = false;
 
     public Location? Location { get; set; }
     public int LocationId { get; set; }

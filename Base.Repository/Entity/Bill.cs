@@ -22,7 +22,7 @@ public class Bill : AuditableEntity
     public DateTime IssuedDate { get; set; }
     public DateTime ExpiredDate { get; set; }
 
-    public bool IsDeleted { get; set; } = false;
+    public bool Deleted { get; set; } = false;
 
 
     public Package? Package { get; set; }
