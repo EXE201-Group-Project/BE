@@ -20,8 +20,8 @@ namespace Base.API.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("{id}", Name = nameof(GetById))]
-        public async Task<IActionResult> GetById(Guid id)
+        [HttpGet("{id}", Name = nameof(GetRoleById))]
+        public async Task<IActionResult> GetRoleById(Guid id)
         {
             if (ModelState.IsValid)
             {
@@ -47,7 +47,7 @@ namespace Base.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int startPage, [FromQuery] int endPage, [FromQuery] int? quantity, [FromQuery] string? roleName)
+        public async Task<IActionResult> GetRoles([FromQuery] int startPage, [FromQuery] int endPage, [FromQuery] int? quantity, [FromQuery] string? roleName)
         {
             if (ModelState.IsValid)
             {
@@ -60,19 +60,20 @@ namespace Base.API.Controllers
 
             return BadRequest(new
             {
-                Title = "Invalid input"
+                Title = "Get roles information failed",
+                Errors = new string[1] { "Invalid input" }
             });
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] RoleVM resource)
+        public async Task<IActionResult> CreateRole([FromBody] RoleVM resource)
         {
             if (ModelState.IsValid)
             {
                 var result = await _roleService.Create(_mapper.Map<Role>(resource));
                 if (result.IsSuccess)
                 {
-                    return CreatedAtAction(nameof(GetById), new
+                    return CreatedAtAction(nameof(GetRoleById), new
                     {
                         id = result.Result!.Id,
                     }, _mapper.Map<RoleResponseVM>(result.Result!));
@@ -89,7 +90,7 @@ namespace Base.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update([FromBody] UpdateRoleVM resource, Guid id)
+        public async Task<IActionResult> UpdateRole([FromBody] UpdateRoleVM resource, Guid id)
         {
             if (ModelState.IsValid)
             {
@@ -114,7 +115,7 @@ namespace Base.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> DeleteRole(Guid id)
         {
             if (ModelState.IsValid)
             {
