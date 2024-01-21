@@ -304,7 +304,7 @@ app.UseStatusCodePages(async context =>
         var error = new ErrorDetails()
         {
             StatusCode = context.HttpContext.Response.StatusCode,
-            Message = "Unauthorize: You do not have permission to access this resource."
+            Title = "Unauthorize: You do not have permission to access this resource."
         };
         await context.HttpContext.Response.WriteAsync(error.ToString());
     }
@@ -316,7 +316,7 @@ app.UseStatusCodePages(async context =>
         var error = new ErrorDetails()
         {
             StatusCode = context.HttpContext.Response.StatusCode,
-            Message = "Forbidden: You do not have sufficient privileges to access this resource."
+            Title = "Forbidden: You do not have sufficient privileges to access this resource."
         };
         await context.HttpContext.Response.WriteAsync(error.ToString());
     }
