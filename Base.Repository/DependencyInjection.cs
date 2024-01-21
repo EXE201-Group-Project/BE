@@ -34,6 +34,12 @@ public static class DependencyInjection
         #region Repository
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IItemRepository, ItemRepository>();
+        services.AddScoped<ILocationRepository, LocationRepository>();
+        services.AddScoped<IRouteRepository, RouteRepository>();
+        services.AddScoped<ITripRepository, TripRepository>();
+        services.AddScoped<IBillRepository, BillRepository>();
+        services.AddScoped<IPackageRepository, PackageRepository>();
         #endregion
 
         return services;

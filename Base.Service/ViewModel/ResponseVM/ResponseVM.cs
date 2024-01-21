@@ -51,6 +51,35 @@ public class RoleResponseVM : Auditable
     public string? Name { get; set; }
 }
 
+public class ItemResponseVM
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public int Quantity { get; set; }
+    public string? Description { get; set; }
+    public bool? PickUp { get; set; }
+    public KeyValuePair<string, string>? ImageUrl { get; set; }
+}
+
+public class LocationResponseVM
+{
+    public int Id { get; set; }
+    public string? Address { get; set; }
+    public float Longitude { get; set; }
+    public float Latitude { get; set; }
+    public int Order { get; set; }
+}
+
+public class TripResponseVM
+{
+    public int Id { get; set; }
+    public int TravelMode { get; set; }
+    public int Status { get; set; }
+    public DateTime StartDate { get; set; }
+    public UserInformationResponseVM? User { get; set; }
+    public IEnumerable<LocationResponseVM>? Locations { get; set; }
+}
+
 public abstract class Auditable
 {
     public string CreatedBy { get; set; } = "Undefined";
