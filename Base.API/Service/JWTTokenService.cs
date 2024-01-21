@@ -8,7 +8,7 @@ namespace Base.API.Service;
 
 public interface IJWTTokenService<T> where T : IdentityUser<Guid>
 {
-    string CreateToken(T user, IEnumerable<string> roleNames);
+    string CreateToken(T user, IEnumerable<string>? roleNames);
 }
 
 public class JWTTokenService<T> : IJWTTokenService<T> where T : IdentityUser<Guid>
@@ -22,7 +22,7 @@ public class JWTTokenService<T> : IJWTTokenService<T> where T : IdentityUser<Gui
         _keyManager = keyManager;
     }
 
-    public string CreateToken(T user, IEnumerable<string> roleNames)
+    public string CreateToken(T user, IEnumerable<string>? roleNames)
     {
         var claims = new List<Claim>
         {
@@ -30,7 +30,7 @@ public class JWTTokenService<T> : IJWTTokenService<T> where T : IdentityUser<Gui
             new Claim(ClaimTypes.Name, user.UserName),
         };
 
-        if(roleNames!.Count() > 0)
+        if(roleNames is not null && roleNames.Count() > 0)
         {
             foreach(var role in roleNames)
             {
