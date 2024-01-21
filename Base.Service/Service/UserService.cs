@@ -6,8 +6,10 @@ using Base.Service.ViewModel.RequestVM;
 using Base.Service.ViewModel.ResponseVM;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Duende.IdentityServer.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
 using Role = Base.Repository.Identity.Role;
 
@@ -39,7 +41,8 @@ public class UserService : IUserService
             return new ServiceResponseVM<User>
             {
                 IsSuccess = false,
-                Title = "Username is already taken"
+                Title = "Create user failed",
+                Errors = new string[1] { "Username is already taken" }
             };
         }
 
@@ -51,7 +54,8 @@ public class UserService : IUserService
                 return new ServiceResponseVM<User>
                 {
                     IsSuccess = false,
-                    Title = "Email is already taken",
+                    Title = "Create user failed",
+                    Errors = new string[1] { "Email is already taken" }
                 };
             }
         }
@@ -64,7 +68,8 @@ public class UserService : IUserService
                 return new ServiceResponseVM<User>
                 {
                     IsSuccess = false,
-                    Title = "Phone is already taken"
+                    Title = "Create user failed",
+                    Errors = new string[1] { "Phone is already taken" }
                 };
             }
         }
@@ -75,7 +80,7 @@ public class UserService : IUserService
             UserName = newEntity.UserName,
             PhoneNumber = newEntity.PhoneNumber,
             Email = newEntity.Email,
-            LockoutEnabled = newEntity.LockoutEnabled ?? true,
+            LockoutEnabled = newEntity.LockoutEnabled ?? false,
             LockoutEnd = newEntity.LockoutEnd,
             EmailConfirmed = false,
             PhoneNumberConfirmed = false,
@@ -95,7 +100,7 @@ public class UserService : IUserService
                     return new ServiceResponseVM<User>
                     {
                         IsSuccess = false,
-                        Title = "Failed to register",
+                        Title = "Create user failed",
                         Errors = new List<string>() { $"Role with id:{id} not found" }
                     };
                 }
@@ -142,7 +147,7 @@ public class UserService : IUserService
                 return new ServiceResponseVM<User>
                 {
                     IsSuccess = false,
-                    Title = "Failed to register",
+                    Title = "Create user failed",
                     Errors = identityResult.Errors.Select(e => e.Description)
                 };
             }
@@ -152,7 +157,7 @@ public class UserService : IUserService
                 {
                     Result = newUser,
                     IsSuccess = true,
-                    Title = "Register successfully"
+                    Title = "Create user successfully"
                 };
             }
         }
@@ -161,7 +166,7 @@ public class UserService : IUserService
             return new ServiceResponseVM<User>
             {
                 IsSuccess = false,
-                Title = "Failed to register",
+                Title = "Create user failed",
                 Errors = new List<string>() { ex.Message }
             };
         }
@@ -170,7 +175,7 @@ public class UserService : IUserService
             return new ServiceResponseVM<User>
             {
                 IsSuccess = false,
-                Title = "Failed to register",
+                Title = "Create user failed",
                 Errors = new string[1] { "The operation has been cancelled" }
             };
         }
@@ -195,8 +200,9 @@ public class UserService : IUserService
         {
             return new LoginUserManagement
             {
-                Title = "Invalid username or password",
-                IsSuccess = false
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[1] { "Invalid username or password" }
             };
         }
         var checkPassword = await _userManager.CheckPasswordAsync(existedUser, resource.Password);
@@ -204,8 +210,9 @@ public class UserService : IUserService
         {
             return new LoginUserManagement
             {
-                Title = "Invalid username or password",
-                IsSuccess = false
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[1] { "Invalid username or password" }
             };
         }
 
@@ -213,8 +220,9 @@ public class UserService : IUserService
         {
             return new LoginUserManagement
             {
-                Title = "Account is blocked",
-                IsSuccess = false
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[1] { "Account is blocked" }
             };
         }
         else
@@ -232,8 +240,110 @@ public class UserService : IUserService
 
     }
 
-    public Task<LoginUserManagement> LoginWithGoogle(string idToken)
+    public async Task<LoginUserManagement> LoginWithGoogle(string idToken)
     {
-        throw new NotImplementedException();
+        var handler = new JwtSecurityTokenHandler();
+        var jwtSecurityToken = handler.ReadJwtToken(idToken);
+        var claims = jwtSecurityToken.Claims;
+
+        if (claims.IsNullOrEmpty())
+        {
+            return new LoginUserManagement
+            {
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[2] { "Invalid id token", "Claims not found" }
+            };
+        }
+
+        var email = claims.Where(c => c.Type == "email").FirstOrDefault()?.Value;
+        if(email is null)
+        {
+            return new LoginUserManagement
+            {
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[1] { "Invalid email or email not found" }
+            };
+        }
+
+        var existedUser = await _userManager.FindByEmailAsync(email);
+        if(existedUser is not null)
+        {
+            if (existedUser.LockoutEnabled)
+            {
+                return new LoginUserManagement
+                {
+                    IsSuccess = false,
+                    Title = "Login failed",
+                    Errors = new string[1] { "Account is blocked" }
+                };
+            }
+
+            var roles = await _unitOfWork.RoleRepository.Get(r => !r.Deleted && r.Users.Contains(existedUser)).ToArrayAsync();
+            existedUser.Roles = roles;
+            return new LoginUserManagement
+            {
+                IsSuccess = true,
+                Title = "Login Successfully",
+                LoginUser = existedUser,
+                RoleNames = roles.Select(r => r.Name)
+            };
+        }
+
+        User newUser = new User
+        {
+            UserName = "Undefined",
+            DisplayName = claims.FirstOrDefault(c => c.Type == "name")?.Value,
+            Email = claims.FirstOrDefault(c => c.Type == "email")?.Value,
+            LockoutEnabled = false,
+            EmailConfirmed = true,
+            PhoneNumberConfirmed = false,
+            TwoFactorEnabled = false,
+            CreatedAt = DateTime.Now,
+            CreatedBy = _currentUserService.UserId,
+            FilePath = claims.FirstOrDefault(c => c.Type == "picture")?.Value
+        };
+
+        try
+        {
+            var result = await _userManager.CreateAsync(newUser);
+            if (!result.Errors.Any())
+            {
+                return new LoginUserManagement
+                {
+                    Title = "Login Successfully",
+                    IsSuccess = true,
+                    LoginUser = newUser
+                };
+            }
+            else
+            {
+                return new LoginUserManagement
+                {
+                    IsSuccess = false,
+                    Title = "Login failed",
+                    Errors = result.Errors.Select(e => e.Description)
+                };
+            }
+        }
+        catch (DbUpdateException ex)
+        {
+            return new LoginUserManagement
+            {
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[2] { ex.Message, "Create user failed" }
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            return new LoginUserManagement
+            {
+                IsSuccess = false,
+                Title = "Login failed",
+                Errors = new string[2] { "The operation has been cancelled", "Create user failed" }
+            };
+        }
     }
 }

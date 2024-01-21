@@ -10,11 +10,17 @@ namespace Base.Service.ViewModel.RequestVM;
 public class LoginUserVM
 {
     [Required]
-    public string UserName { get; set; } = "";
-
+    public string UserName { get; set; } = default!;
     [Required]
     [MinLength(5)]
-    public string Password { get; set; } = "";
+    public string Password { get; set; } = default!;
 
+    public string? DeviceToken { get; set; }
+}
+
+public class LoginGoogleVM
+{
+    [Required]
+    public string IdToken { get; set; } = default!;
     public string? DeviceToken { get; set; }
 }
