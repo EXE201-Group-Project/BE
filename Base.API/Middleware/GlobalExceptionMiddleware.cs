@@ -39,7 +39,8 @@ namespace Base.API.Middleware
             var error = new ErrorDetails()
             {
                 StatusCode = context.Response.StatusCode,
-                Message = "Internal Server Error: " + exception.Message
+                Title = "Internal Server Error: ",
+                Errors = new string[1] { exception.Message }
             };
 
             await context.Response.WriteAsync(error.ToString());
@@ -48,7 +49,8 @@ namespace Base.API.Middleware
         public class ErrorDetails
         {
             public int StatusCode { get; set; }
-            public string? Message { get; set; }
+            public string? Title { get; set; }
+            public IEnumerable<string>? Errors { get; set; }
 
             public override string ToString()
             {
