@@ -73,7 +73,11 @@ public class LocationResponseVM
 public class TripResponseVM
 {
     public int Id { get; set; }
-    public int TravelMode { get; set; }
+    public string? RoutingPreference { get; set; }
+    public bool? AvoidHighways { get; set; } = false;
+    public bool? AvoidTolls { get; set; } = false;
+    public bool? AvoidFerries { get; set; } = false;
+    public string? TravelMode { get; set; }
     public int Status { get; set; }
     public DateTime StartDate { get; set; }
     public UserInformationResponseVM? User { get; set; }

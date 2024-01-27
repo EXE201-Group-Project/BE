@@ -5,11 +5,16 @@ namespace Base.Service.ViewModel.RequestVM.Trip;
 
 public class TripVM
 {
-    public int TravelMode { get; set; }
-    public int Status { get; set; }
-    public DateTime StartDate { get; set; }
-    public Guid UserId { get; set; }
+    public string? routingPreference { get; set; } = "TRAFFIC_AWARE";
+    public bool? avoidHighways { get; set; } = false;
+    public bool? avoidTolls { get; set; } = false;
+    public bool? avoidFerries { get; set; } = false;
+    public string? TravelMode { get; set; } = "DRIVE";
+    public int? Status { get; set; }
+    public DateTime? StartDate { get; set; }
+    public Guid? UserId { get; set; }
     public IEnumerable<Trip_LocationVM> Locations { get; set; } = new List<Trip_LocationVM>();
+    public string? JsonContent { get; set; }
 }
 
 public class Trip_LocationVM
@@ -37,7 +42,11 @@ public class Trip_ItemVM
 
 public class UpdateTripVM
 {
-    public int? TravelMode { get; set; }
+    public string routingPreference { get; set; } = "TRAFFIC_AWARE";
+    public bool? avoidHighways { get; set; } = false;
+    public bool? avoidTolls { get; set; } = false;
+    public bool? avoidFerries { get; set; } = false;
+    public string TravelMode { get; set; } = "DRIVE";
     public int? Status { get; set; }
     public DateTime? StartDate { get; set; }
     public Guid? UserId { get; set; }

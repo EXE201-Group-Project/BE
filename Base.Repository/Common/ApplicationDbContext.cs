@@ -59,12 +59,12 @@ public class ApplicationDbContext : IdentityDbContext<User, Role, Guid>, IApplic
 
         builder.Entity<Route>(entity =>
         {
-            entity.HasOne(r => r.StartPoint)
+            entity.HasOne(r => r.Origin)
                 .WithOne(l => l.StartPointRoute)
                 .HasForeignKey<Route>(r => r.StartPointId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(r => r.EndPoint)
+            entity.HasOne(r => r.Destination)
                 .WithOne(l => l.EndPointRoute)
                 .HasForeignKey<Route>(r => r.EndPointId)
                 .OnDelete(DeleteBehavior.Restrict);

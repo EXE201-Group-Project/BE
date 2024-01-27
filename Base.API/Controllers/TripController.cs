@@ -6,6 +6,7 @@ using Base.Service.ViewModel.RequestVM.Trip;
 using Base.Service.ViewModel.ResponseVM;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace Base.API.Controllers;
 
@@ -72,7 +73,21 @@ public class TripController : ControllerBase
     {
         if (ModelState.IsValid)
         {
-            var result = await _tripService.Create(_mapper.Map<Trip>(resource));
+            Trip trip = new Trip();
+            var data = HttpContext.Request.Form["JsonContent"].ToString();
+            if(data is not null)
+            {
+                var tripData = JsonSerializer.Deserialize<TripVM>(data);
+                if(tripData is not null)
+                {
+                    trip = _mapper.Map<Trip>(tripData);
+                }
+            }
+            else
+            {
+                trip = _mapper.Map<Trip>(resource);
+            }
+            var result = await _tripService.Create(trip);
             if (result.IsSuccess)
             {
                 return CreatedAtAction(nameof(GetTripById), new

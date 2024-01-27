@@ -13,7 +13,11 @@ public class Trip : AuditableEntity
 {
     [Key]
     public int Id { get; set; }
-    public int TravelMode { get; set; } = 0;
+    public string RoutingPreference { get; set; } = "TRAFFIC_AWARE";
+    public bool? AvoidHighways { get; set; } = false;
+    public bool? AvoidTolls { get; set; } = false;
+    public bool? AvoidFerries { get; set; } = false;
+    public string TravelMode { get; set; } = "DRIVE";
     public int Status { get; set; }
     public bool Deleted { get; set; } = false;
     public DateTime StartDate { get; set; }
@@ -24,3 +28,6 @@ public class Trip : AuditableEntity
     public IEnumerable<Location> Locations { get; set; } = new List<Location>();
     public IEnumerable<Route> Routes { get; set; } = new List<Route>();
 }
+
+
+
