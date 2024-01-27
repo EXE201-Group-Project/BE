@@ -60,7 +60,8 @@ namespace Base.API.Controllers
                     return BadRequest(new ServiceResponseVM
                     {
                         IsSuccess = false,
-                        Title = result.Title
+                        Title = result.Title,
+                        Errors = result.Errors
                     });
                 }
             }

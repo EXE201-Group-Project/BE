@@ -1,5 +1,6 @@
 ﻿using Base.Repository.Common;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Base.Repository.Entity;
 
@@ -21,4 +22,9 @@ public class Location : AuditableEntity
     public Route? EndPointRoute { get; set; }
 
     public IEnumerable<Item> Items { get; set; } = new List<Item>();
+
+    [NotMapped]
+    public object? location { get; set; }
+    [NotMapped]
+    public object? latLng { get; set; }
 }

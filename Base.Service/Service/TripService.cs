@@ -8,14 +8,11 @@ using Base.Service.ViewModel.ResponseVM;
 using Duende.IdentityServer.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace Base.Service.Service;
 
@@ -25,12 +22,22 @@ internal class TripService : ITripService
     private readonly IValidateGet _validateGet;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUploadFile _uploadFile;
+    private readonly HttpClient client = default!;
+    private string ApiUrl = "";
+
     public TripService(IUnitOfWork unitOfWork, IValidateGet validateGet, ICurrentUserService currentUserService, IUploadFile uploadFile)
     {
         _unitOfWork = unitOfWork;
         _validateGet = validateGet;
         _currentUserService = currentUserService;
         _uploadFile = uploadFile;
+
+        client = new HttpClient();
+        var contentType = new MediaTypeWithQualityHeaderValue("application/json");
+        client.DefaultRequestHeaders.Accept.Add(contentType);
+        client.DefaultRequestHeaders.Add("X-Goog-Api-Key", "AIzaSyBxuTnT2zRMR3a1xA5NU8z-8orw2ZL6tV0");
+        client.DefaultRequestHeaders.Add("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline");
+        ApiUrl = "https://routes.googleapis.com/directions/v2:computeRoutes";
     }
 
     public async Task<Trip?> GetById(int id)
@@ -162,12 +169,13 @@ internal class TripService : ITripService
         {
             var errors = new ConcurrentQueue<string>();
 
-            var options = new ParallelOptions
+            var parallelOptions = new ParallelOptions
             {
                 MaxDegreeOfParallelism = Convert.ToInt32(Math.Ceiling(Environment.ProcessorCount * 0.3 * 2))
             };
 
-            Parallel.ForEach(newTrip.Locations, options, async (location, state) =>
+            // Create new trip
+            Parallel.ForEach(newTrip.Locations, parallelOptions, async (location, state) =>
             {
                 if (location.Items.Count() > 0)
                 {
@@ -191,6 +199,80 @@ internal class TripService : ITripService
                     }
                 }
             });
+
+            // Create routes section
+            var locations = newTrip.Locations.ToArray();
+            var routes = new List<Route>();
+            for (int i = 0; i < locations.Count() - 1; i++)
+            {
+                var startLatLng = locations[i];
+                var endLatLng = locations[i + 1];
+
+                // Create route object for json serialization
+                var routeRequest = new Route()
+                {
+                    Origin = new Location()
+                    {
+                        location = new Location()
+                        {
+                            latLng = new
+                            {
+                                latitude = startLatLng.Latitude,
+                                longitude = startLatLng.Longitude
+                            }
+                        }
+                    },
+
+                    Destination = new Location()
+                    {
+                        location = new Location()
+                        {
+                            latLng = new
+                            {
+                                latitude = endLatLng.Latitude,
+                                longitude = endLatLng.Longitude
+                            }
+                        }
+                    },
+                    travelMode = newTrip.TravelMode,
+                    routingPreference = newTrip.RoutingPreference,
+                    routeModifiers = new
+                    {
+                        avoidTolls = newTrip.AvoidTolls,
+                        avoidHighways = newTrip.AvoidHighways,
+                        avoidFerries = newTrip.AvoidFerries,
+                    }
+                };
+                string strData = JsonSerializer.Serialize(routeRequest);
+
+                // Gắn vô body content
+                var contentData = new StringContent(strData, System.Text.Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await client.PostAsync(ApiUrl, contentData);
+                if (response.IsSuccessStatusCode)
+                {
+                    // Get routes result
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    var serializeOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var routesResult = JsonSerializer.Deserialize<List<RouteResponse>>(responseBody, serializeOptions)!;
+
+                    // Create routes
+                    foreach(var routeResult in routesResult)
+                    {
+                        var route = routeRequest;
+                        route.CreatedAt = DateTime.Now;
+                        route.CreatedBy = _currentUserService.UserId;
+                        route.DistanceMeters = routeResult.distanceMeters;
+                        route.DurationSeconds = int.Parse(routeResult.duration?.Remove(routeResult.duration.Length - 1) ?? "0");
+                        route.EncodedPolylne = routeResult.polyline?.encodedPolyline ?? "";
+                        routes.Add(route);
+                    }
+                }
+            }
+            newTrip.Routes = routes;
 
             /*newTrip.Locations.AsParallel()
                 .WithDegreeOfParallelism(Convert.ToInt32(Math.Ceiling(Environment.ProcessorCount * 0.3 * 2)))
@@ -343,4 +425,19 @@ internal class TripService : ITripService
             };
         }
     }
+
+
+    // Class Route Response for result of route api
+    private class RouteResponse
+    {
+        public int distanceMeters { get; set; }
+        public string? duration { get; set; }
+        public Polyline? polyline { get; set; }
+    }
+
+    private class Polyline
+    {
+        public string? encodedPolyline { get; set; }
+    }
 }
+
