@@ -34,6 +34,7 @@ public static class DependencyInjection
         #endregion
 
         services.AddScoped<IUploadFile, UploadFile>();
+        services.AddScoped<IGoogleService, GoogleService>();
 
         return services;
     }
