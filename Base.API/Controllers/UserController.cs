@@ -61,7 +61,7 @@ namespace Base.API.Controllers
                 {
                     return NotFound("Not Found");
                 }
-                return Ok(new ServiceResponseVM<UserInformationResponseVM>
+                return Ok(new
                 {
                     Result = _mapper.Map<UserInformationResponseVM>(userResult)
                 });
@@ -74,6 +74,31 @@ namespace Base.API.Controllers
                     Title = "Invalid input"
                 });
             }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser([FromBody] UserVM resource, Guid id)
+        {
+            if (ModelState.IsValid)
+            {
+                var result = await _userService.UpdateUser(resource, id);
+                if (result.IsSuccess)
+                {
+                    return Ok(new
+                    {
+                        Title = result.Title,
+                        Result = _mapper.Map<UserInformationResponseVM>(result.Result)
+                    });
+                }
+
+                return BadRequest(result);
+            }
+
+            return BadRequest(new
+            {
+                Title = "Update user failed",
+                Errors = new string[1] { "Invalid input" }
+            });
         }
     }
 }

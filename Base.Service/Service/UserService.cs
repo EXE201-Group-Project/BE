@@ -7,8 +7,10 @@ using Base.Service.ViewModel.ResponseVM;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Duende.IdentityServer.Extensions;
+using FirebaseAdmin;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
 using Role = Base.Repository.Identity.Role;
@@ -347,8 +349,119 @@ public class UserService : IUserService
         }
     }
 
-/*    public async Task<ServiceResponseVM<User>> UpdateUser()
+    public async Task<ServiceResponseVM<User>> UpdateUser(UserVM resource, Guid id)
     {
+        var existedUser = await _unitOfWork
+            .UserRepository
+            .Get(u => !u.Deleted && u.Id == id)
+            .FirstOrDefaultAsync();
 
-    }*/
+        if(existedUser == null)
+        {
+            return new ServiceResponseVM<User>
+            {
+                IsSuccess = false,
+                Title = "Update user failed",
+                Errors = new string[1] { "User not found" }
+            };
+        }
+
+        if(resource.Email is not null)
+        {
+            var existedEmail = await _unitOfWork.UserRepository.Get(u => u.Email.Equals(resource.Email)).AsNoTracking().FirstOrDefaultAsync();
+            if (existedEmail is not null)
+            {
+                return new ServiceResponseVM<User>
+                {
+                    IsSuccess = false,
+                    Title = "Update user failed",
+                    Errors = new string[1] { "Email is already taken" }
+                };
+            }
+            existedUser.Email = resource.Email;
+            existedUser.NormalizedEmail = resource.Email.ToUpper();
+        }
+
+        if(resource.PhoneNumber is not null)
+        {
+            var existedPhone = await _unitOfWork.UserRepository.Get(u => u.PhoneNumber.Equals(resource.PhoneNumber)).AsNoTracking().FirstOrDefaultAsync();
+            if (existedPhone is not null)
+            {
+                return new ServiceResponseVM<User>
+                {
+                    IsSuccess = false,
+                    Title = "Update user failed",
+                    Errors = new string[1] { "Phone is already taken" }
+                };
+            }
+            existedUser.PhoneNumber = resource.PhoneNumber;
+        }
+
+        existedUser.LockoutEnd = resource.LockoutEnd ?? existedUser.LockoutEnd;
+        existedUser.LockoutEnabled = resource.LockoutEnabled ?? existedUser.LockoutEnabled;
+        existedUser.DisplayName = resource.DisplayName ?? existedUser.DisplayName;
+
+        //Upload file
+        var file = resource.Avatar;
+        if (file is not null && file.Length > 0)
+        {
+            var uploadFile = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, file.OpenReadStream())
+            };
+            var uploadResult = await _cloudinary.UploadAsync(uploadFile);
+
+            if (uploadResult.Error is not null)
+            {
+                // Log error here
+            }
+            else
+            {
+                existedUser.FilePath = uploadResult.SecureUrl.ToString();
+            }
+        }
+        else if (resource.FilePath is not null)
+        {
+            existedUser.FilePath = resource.FilePath;
+        }
+
+        try
+        {
+            var updateResult = await _unitOfWork.SaveChangesAsync();
+            if (updateResult)
+            {
+                return new ServiceResponseVM<User>
+                {
+                    IsSuccess = true,
+                    Title = "Update user successfully"
+                };
+            }
+            else
+            {
+                return new ServiceResponseVM<User>
+                {
+                    IsSuccess = false,
+                    Title = "Update user failed"
+                };
+            }
+        }
+        catch (DbUpdateException ex)
+        {
+            return new ServiceResponseVM<User>
+            {
+                IsSuccess = false,
+                Title = "Update user failed",
+                Errors = new string[1] { ex.Message }
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            return new ServiceResponseVM<User>
+            {
+                IsSuccess = false,
+                Title = "Update user failed",
+                Errors = new string[1] { "The operation has been cancelled" }
+            };
+        }
+    }
 }
