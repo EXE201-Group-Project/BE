@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Base.Repository.Entity;
+using Base.Service.GoogleEntity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.AccessControl;
@@ -88,4 +90,10 @@ public abstract class Auditable
 {
     public string CreatedBy { get; set; } = "Undefined";
     public DateTime CreatedAt { get; set; }
+}
+
+public class TripResponse
+{
+    public Trip? Trip { get; set; }
+    public IEnumerable<RouteResponseDTO> Routes { get; set; } = new List<RouteResponseDTO>();
 }

@@ -1,6 +1,7 @@
 ﻿using Base.Repository.Common;
 using Base.Repository.Entity;
 using Base.Service.Common;
+using Base.Service.GoogleEntity;
 using Base.Service.IService;
 using Base.Service.Validation;
 using Base.Service.ViewModel.RequestVM.Trip;
@@ -8,11 +9,14 @@ using Base.Service.ViewModel.ResponseVM;
 using Duende.IdentityServer.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Base.Service.Service;
 
@@ -24,8 +28,11 @@ internal class TripService : ITripService
     private readonly IUploadFile _uploadFile;
     private readonly HttpClient client = default!;
     private string ApiUrl = "";
+    private string modelAiUrl = "";
+    private readonly HttpClient modelAiClient = default!;
+    private readonly IGoogleService _googleService;
 
-    public TripService(IUnitOfWork unitOfWork, IValidateGet validateGet, ICurrentUserService currentUserService, IUploadFile uploadFile)
+    public TripService(IUnitOfWork unitOfWork, IValidateGet validateGet, ICurrentUserService currentUserService, IUploadFile uploadFile, IGoogleService googleService)
     {
         _unitOfWork = unitOfWork;
         _validateGet = validateGet;
@@ -33,11 +40,15 @@ internal class TripService : ITripService
         _uploadFile = uploadFile;
 
         client = new HttpClient();
+        modelAiClient = new HttpClient();
         var contentType = new MediaTypeWithQualityHeaderValue("application/json");
+        modelAiClient.DefaultRequestHeaders.Accept.Add(contentType);
         client.DefaultRequestHeaders.Accept.Add(contentType);
         client.DefaultRequestHeaders.Add("X-Goog-Api-Key", "AIzaSyBxuTnT2zRMR3a1xA5NU8z-8orw2ZL6tV0");
         client.DefaultRequestHeaders.Add("X-Goog-FieldMask", "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline");
         ApiUrl = "https://routes.googleapis.com/directions/v2:computeRoutes";
+        modelAiUrl = "http://modelAi:9999/api/v1/shortest_path";
+        _googleService = googleService;
     }
 
     public async Task<Trip?> GetById(int id)
@@ -152,12 +163,12 @@ internal class TripService : ITripService
     }
 
     [Authorize()]
-    public async Task<ServiceResponseVM<Trip>> Create(Trip newTrip)
+    public async Task<ServiceResponseVM<TripResponse>> Create(Trip newTrip)
     {
         var existedUser = await _unitOfWork.UserRepository.FindAsync(newTrip.UserId);
         if (existedUser is null)
         {
-            return new ServiceResponseVM<Trip>
+            return new ServiceResponseVM<TripResponse>
             {
                 IsSuccess = false,
                 Title = "Create trip failed",
@@ -200,8 +211,8 @@ internal class TripService : ITripService
                 }
             });
 
-            // Create routes section
-            var locations = newTrip.Locations.ToArray();
+            #region Test create routes section
+            /*var locations = newTrip.Locations.ToArray();
             var routes = new List<Route>();
             for (int i = 0; i < locations.Count() - 1; i++)
             {
@@ -272,8 +283,10 @@ internal class TripService : ITripService
                     }
                 }
             }
-            newTrip.Routes = routes;
+            newTrip.Routes = routes;*/
+            #endregion
 
+            #region test
             /*newTrip.Locations.AsParallel()
                 .WithDegreeOfParallelism(Convert.ToInt32(Math.Ceiling(Environment.ProcessorCount * 0.3 * 2)))
                 .ForAll(async location =>
@@ -294,10 +307,11 @@ internal class TripService : ITripService
                         }
                     }
                 });*/
+            #endregion
 
             if (!errors.IsNullOrEmpty())
             {
-                return new ServiceResponseVM<Trip>
+                return new ServiceResponseVM<TripResponse>
                 {
                     IsSuccess = false,
                     Title = "Create trip failed",
@@ -316,16 +330,110 @@ internal class TripService : ITripService
             var result = await _unitOfWork.SaveChangesAsync();
             if (result)
             {
-                return new ServiceResponseVM<Trip>
+                var waypoints = new List<Waypoint>();
+
+                #region Call Model AI API
+                var addresses = new List<object>();
+                foreach(var location in newTrip.Locations)
+                {
+                    addresses.Add(new
+                    {
+                        id = location.Id,
+                        latitude = location.Latitude,
+                        longitude = location.Longitude,
+                    });
+                }
+                var requestContent = new
+                {
+                    addresses = addresses
+                };
+                string strData = JsonSerializer.Serialize(requestContent);
+                var contentData = new StringContent(strData, System.Text.Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await modelAiClient.PostAsync(modelAiUrl, contentData);
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    var orderedResult = (JArray?)JsonConvert.DeserializeObject(responseBody);
+
+                    if (orderedResult.IsNullOrEmpty())
+                    {
+                        return new ServiceResponseVM<TripResponse>
+                        {
+                            IsSuccess = false,
+                            Title = "Calculate routes failed",
+                            Errors = new string[2] { "Can not calculate the order of routes", "The ordered result is null or empty" }
+                        };
+                    }
+
+                    foreach(var item in orderedResult ?? Enumerable.Empty<JToken>())
+                    {
+                        if (item.Type.Equals(JTokenType.Object)){
+                            var location = newTrip.Locations.FirstOrDefault(l => l.Id == item["id"]?.Value<int>());
+                            if(location is null)
+                            {
+                                return new ServiceResponseVM<TripResponse>
+                                {
+                                    IsSuccess = false,
+                                    Title = "Calculate routes failed",
+                                    Errors = new string[1] { "Data responsed from model ai not correct" }
+                                };
+                            }
+                            waypoints.Add(new Waypoint
+                            {
+                                description = location.Address,
+                                location = new Base.Service.GoogleEntity.Location
+                                {
+                                    latLng = new LatLng
+                                    {
+                                        latitude = location.Latitude,
+                                        longitude = location.Longitude
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    return new ServiceResponseVM<TripResponse>
+                    {
+                        IsSuccess = false,
+                        Title = "Calculate routes failed",
+                        Errors = new string[2] { "Can not calculate the order of routes", "The http response is unsuccessfully" }
+                    };
+                }
+                #endregion
+
+                #region Call GG Service
+                if (waypoints.IsNullOrEmpty())
+                {
+                    return new ServiceResponseVM<TripResponse>
+                    {
+                        IsSuccess = false,
+                        Title = "Calculate routes failed",
+                        Errors = new string[1] { "Setting waypoints failed" }
+                    };
+                }
+
+                var googleServiceResult = await _googleService.CalculateRouteAsync(waypoints, newTrip.TravelMode, newTrip.RoutingPreference, newTrip.AvoidHighways ?? false, newTrip.AvoidTolls ?? false, newTrip.AvoidFerries ?? false);
+
+                #endregion
+
+                return new ServiceResponseVM<TripResponse>
                 {
                     IsSuccess = true,
                     Title = "Create trip successfully",
-                    Result = newTrip
+                    Result = new TripResponse
+                    {
+                        Trip = newTrip,
+                        Routes = googleServiceResult ?? Enumerable.Empty<RouteResponseDTO>()
+                    }
                 };
             }
             else
             {
-                return new ServiceResponseVM<Trip>
+                return new ServiceResponseVM<TripResponse>
                 {
                     IsSuccess = false,
                     Title = "Create trip failed",
@@ -335,7 +443,7 @@ internal class TripService : ITripService
         }
         catch (DbUpdateException ex)
         {
-            return new ServiceResponseVM<Trip>
+            return new ServiceResponseVM<TripResponse>
             {
                 IsSuccess = false,
                 Title = "Create trip failed",
@@ -344,7 +452,7 @@ internal class TripService : ITripService
         }
         catch (OperationCanceledException ex)
         {
-            return new ServiceResponseVM<Trip>
+            return new ServiceResponseVM<TripResponse>
             {
                 IsSuccess = false,
                 Title = "Create trip failed",

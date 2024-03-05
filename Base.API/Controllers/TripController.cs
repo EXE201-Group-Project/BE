@@ -92,8 +92,12 @@ public class TripController : ControllerBase
             {
                 return CreatedAtAction(nameof(GetTripById), new
                 {
-                    id = result.Result!.Id,
-                }, _mapper.Map<TripResponseVM>(result.Result!));
+                    id = result.Result?.Trip?.Id ?? 0,
+                }, new
+                {
+                    Trip = _mapper.Map<TripResponseVM>(result.Result?.Trip),
+                    Routes = result.Result?.Routes
+                });
             }
 
             return BadRequest(result);
