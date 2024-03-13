@@ -24,7 +24,7 @@ namespace Base.API.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(UserInformationResponseVM))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ServiceResponseVM))]
-        public async Task<IActionResult> CreateNewUser([FromForm] UserVM resource)
+        public async Task<IActionResult> CreateNewUser([FromBody] UserVM resource)
         {
             if (ModelState.IsValid)
             {
