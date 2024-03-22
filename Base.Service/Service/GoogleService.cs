@@ -14,6 +14,7 @@ namespace Base.Service.Service
     {
         private readonly HttpClient client = null!;
         private string ApiUrl = "";
+
         public GoogleService()
         {
             client = new HttpClient();
