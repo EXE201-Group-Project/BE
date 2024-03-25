@@ -100,5 +100,17 @@ namespace Base.API.Controllers
                 Errors = new string[1] { "Invalid input" }
             });
         }
+
+        [HttpPost("code")]
+        [Authorize]
+        public async Task<IActionResult> GetCodeForPayment()
+        {
+            var code = await _userService.GetCode();
+            if(code is null)
+            {
+                return BadRequest("Generate code failed, please try again");
+            }
+            return Ok(code);
+        }
     }
 }

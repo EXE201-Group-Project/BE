@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
+using System.Text;
 using Role = Base.Repository.Identity.Role;
 
 namespace Base.Service.Service;
@@ -463,5 +464,48 @@ public class UserService : IUserService
                 Errors = new string[1] { "The operation has been cancelled" }
             };
         }
+    }
+
+    public async Task<string?> GetCode()
+    {
+        var userId = _currentUserService.UserId;
+        if(userId is null)
+        {
+            return null;
+        }
+
+        var existedUser = await _unitOfWork.UserRepository.FindAsync(new Guid(userId));
+        if(existedUser is null)
+        {
+            return null;
+        }
+
+        // Generate new Code
+        int length = 7;
+        StringBuilder str_build = new StringBuilder();
+        Random random = new Random();
+        char letter;
+        for (int i = 0; i < length; i++)
+        {
+            double flt = random.NextDouble();
+            int shift = Convert.ToInt32(Math.Floor(25 * flt));
+            letter = Convert.ToChar(shift + 65);
+            str_build.Append(letter);
+        }
+        var code = str_build.ToString();
+
+        if(code is null)
+        {
+            return null;
+        }
+
+        existedUser.Code = code;
+        var result = await _unitOfWork.SaveChangesAsync();
+        if (!result)
+        {
+            return null;
+        }
+
+        return code;
     }
 }

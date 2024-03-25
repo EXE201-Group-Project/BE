@@ -11,4 +11,5 @@ public interface IUserService
     Task<ServiceResponseVM<User>> CreateNewUser(UserVM newEntity);
     Task<User?> GetUserById(Guid id);
     Task<ServiceResponseVM<User>> UpdateUser(UserVM resource, Guid id);
+    Task<string?> GetCode();
 }

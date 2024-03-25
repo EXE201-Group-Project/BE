@@ -20,6 +20,7 @@ public class User : IdentityUser<Guid>
     public bool Deleted { get; set; } = false;
 
     public bool IsActivated { get; set; } = false;
+    public string? Code { get; set; }
 
     public IEnumerable<Role> Roles { get; set; } = new List<Role>();
 

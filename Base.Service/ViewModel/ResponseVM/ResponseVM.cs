@@ -38,6 +38,7 @@ public class UserInformationResponseVM : Auditable
     public string? NormalizedEmail { get; set; }
     public bool EmailConfirmed { get; set; }
     public string? PhoneNumber { get; set; }
+    public bool? IsActivated { get; set; }
     public bool PhoneNumberConfirmed { get; set; }
     public bool TwoFactorEnabled { get; set; }
     public DateTimeOffset? LockoutEnd { get; set; }
