@@ -36,14 +36,17 @@ namespace Base.API.Controllers
 
                     #region Call Model AI API
                     var addresses = new List<object>();
+                    var count = 1;
                     foreach (var location in locations)
                     {
+                        location.place_id = count.ToString();
                         addresses.Add(new
                         {
                             id = location.place_id,
                             latitude = location.location?.latLng?.latitude,
                             longitude = location.location?.latLng?.longitude,
                         });
+                        count++;
                     }
                     var requestContent = new
                     {
