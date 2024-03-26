@@ -26,6 +26,7 @@ namespace Base.Service.Service
         }
         public async Task<List<RouteResponseDTO>> CalculateRouteAsync(List<Waypoint> locations, string travelMode, string routingPreference, bool avoidHighways, bool avoidTolls, bool avoidFerries)
         {
+            bool update;
             try
             {
                 List<RouteResponse> routes = new List<RouteResponse>();
