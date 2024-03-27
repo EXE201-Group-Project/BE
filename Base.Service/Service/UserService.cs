@@ -296,7 +296,7 @@ public class UserService : IUserService
 
         User newUser = new User
         {
-            UserName = "Undefined",
+            UserName = claims.FirstOrDefault(c => c.Type == "email")?.Value,
             DisplayName = claims.FirstOrDefault(c => c.Type == "name")?.Value,
             Email = claims.FirstOrDefault(c => c.Type == "email")?.Value,
             LockoutEnabled = false,
