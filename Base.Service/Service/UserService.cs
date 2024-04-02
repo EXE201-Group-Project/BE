@@ -480,21 +480,34 @@ public class UserService : IUserService
             return null;
         }
 
-        // Generate new Code
-        int length = 7;
-        StringBuilder str_build = new StringBuilder();
-        Random random = new Random();
-        char letter;
-        for (int i = 0; i < length; i++)
+        if(existedUser.Code is not null)
         {
-            double flt = random.NextDouble();
-            int shift = Convert.ToInt32(Math.Floor(25 * flt));
-            letter = Convert.ToChar(shift + 65);
-            str_build.Append(letter);
+            return existedUser.Code;
         }
-        var code = str_build.ToString();
 
-        if(code is null)
+        // Generate new Code
+        bool isMatch = true;
+        string? code = null;
+        do
+        {
+            int length = 7;
+            StringBuilder str_build = new StringBuilder();
+            Random random = new Random();
+            char letter;
+            for (int i = 0; i < length; i++)
+            {
+                double flt = random.NextDouble();
+                int shift = Convert.ToInt32(Math.Floor(25 * flt));
+                letter = Convert.ToChar(shift + 65);
+                str_build.Append(letter);
+            }
+            code = str_build.ToString();
+
+            isMatch = _unitOfWork.UserRepository.Get(u => u.Code == code).FirstOrDefault() is not null;
+        }
+        while (isMatch);
+
+        if (code is null)
         {
             return null;
         }
